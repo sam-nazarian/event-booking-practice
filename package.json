@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mongoose": "^6.7.2"
+  },
+  "scripts": {
+    "start": "NODE_ENV=development nodemon server.js"
+  },
+  "name": "event-booking-webapp",
+  "description": "A web app in which a user can book events or post new events.",
+  "version": "1.0.0",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samanfathnazarian/event-booking-webapp.git"
+  },
+  "author": "Saman Fathnazarian",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samanfathnazarian/event-booking-webapp/issues"
+  },
+  "homepage": "https://github.com/samanfathnazarian/event-booking-webapp#readme"
+}
