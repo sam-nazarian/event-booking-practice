@@ -15,7 +15,8 @@
     "xss-clean": "^0.1.1"
   },
   "scripts": {
-    "start": "NODE_ENV=development nodemon server.js"
+    "start": "NODE_ENV=development nodemon server.js",
+    "start:prod": "NODE_ENV=production nodemon server.js"
   },
   "name": "event-booking-webapp",
   "description": "A web app in which a user can book events or post new events.",
