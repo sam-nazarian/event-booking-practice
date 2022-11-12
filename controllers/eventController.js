@@ -1,12 +1,18 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const Tour = require('./../models/eventModel'); //Tour is a Collection/model
+const Event = require('./../models/eventModel'); //Event is a Collection/model
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
 const AppError = require('../utils/appError');
 
+/**
+ * Store multer in memory, not in hard drive
+ */
 const multerStorage = multer.memoryStorage();
 
+/**
+ * Add a filter to multer
+ */
 const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
     cb(null, true);
@@ -17,26 +23,34 @@ const multerFilter = (req, file, cb) => {
 
 const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
 
-// for single uploads
-// upload.single('image'); req.file
+/*
+for single uploads
+upload.single('image'); req.file
 
-//for multiple uploads, with 1 field
-// upload.array('images', 3); req.files
+for multiple uploads, with 1 field
+upload.array('images', 3); req.files
+*/
 
-//for multiple uploads, with many fields
-exports.uploadTourImages = upload.fields([
+/**
+ * For multiple uploads, with many fields
+ * Stores images in req.files
+ */
+exports.uploadEventImages = upload.fields([
   { name: 'imageCover', maxCount: 1 },
   { name: 'images', maxCount: 3 },
-]); //req.files
+]);
 
-exports.resizeTourImages = catchAsync(async (req, res, next) => {
+/**
+ * Resize Images, save them to the img folder. Add name of image to req.body.
+ */
+exports.resizeEventImages = catchAsync(async (req, res, next) => {
   // console.log(req.files);
   if (!req.files.imageCover || !req.files.images) return next();
 
   // 1: Cover image
   //on database field is called imageCover
-  req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
-  await sharp(req.files.imageCover[0].buffer).resize(2000, 1333).toFormat('jpeg').jpeg({ quality: 90 }).toFile(`public/img/tours/${req.body.imageCover}`);
+  req.body.imageCover = `event-${req.params.id}-${Date.now()}-cover.jpeg`;
+  await sharp(req.files.imageCover[0].buffer).resize(2000, 1333).toFormat('jpeg').jpeg({ quality: 90 }).toFile(`public/img/events/${req.body.imageCover}`);
 
   // 2: Images
   req.body.images = [];
@@ -44,9 +58,9 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
   //async callback function returns a promise, which then would need to be awaited
   await Promise.all(
     req.files.images.map(async (file, i) => {
-      const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+      const filename = `event-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
 
-      await sharp(file.buffer).resize(2000, 1333).toFormat('jpeg').jpeg({ quality: 90 }).toFile(`public/img/tours/${filename}`);
+      await sharp(file.buffer).resize(2000, 1333).toFormat('jpeg').jpeg({ quality: 90 }).toFile(`public/img/events/${filename}`);
 
       req.body.images.push(filename);
     })
@@ -56,123 +70,18 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
   next();
 });
 
-exports.alias = (req, res, next) => {
-  //req.query is url's querys
-  req.query.limit = 5;
-  req.query.sort = '-ratingsAverage price';
-  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
-  next();
-};
+// EVENT ROUTE HANDLERS / CRUD CONTROLERS:
+exports.getAllEvents = factory.getAll(Event);
+exports.getEvent = factory.getOne(Event, { path: 'reviews' }); //poopulate reviews
+exports.createEvent = factory.createOne(Event);
+exports.updateEvent = factory.updateOne(Event); //patch updates part of data, put replaces data with new data
+exports.deleteEvent = factory.deleteOne(Event);
 
-// TOUR ROUT HANDLERS / CONTROLERS
-
-exports.getAllTours = factory.getAll(Tour);
-exports.getTour = factory.getOne(Tour, { path: 'reviews' }); //poopulate reviews
-exports.createTour = factory.createOne(Tour);
-exports.updateTour = factory.updateOne(Tour); //patch updates part of data, put replaces data with new data
-exports.deleteTour = factory.deleteOne(Tour);
-
-exports.getTourStats = catchAsync(async (req, res, next) => {
-  // try {
-  const stats = await Tour.aggregate([
-    {
-      $match: { duration: { $gte: 1 } },
-    },
-    {
-      $group: {
-        _id: { $toUpper: '$difficulty' },
-        numTours: { $sum: 1 }, //for each doc 1 added to numTours
-        numRatings: { $sum: '$ratingsQuantity' },
-        avgRating: { $avg: '$ratingsAverage' },
-        avgPrice: { $avg: '$price' },
-        minPrice: { $min: '$price' },
-        maxPrice: { $max: '$price' },
-      },
-    },
-    {
-      $sort: { avgPrice: 1 }, //old names no longer exist, (1 ascending)
-    },
-    {
-      $match: { _id: { $ne: 'EASY' } }, //id is now difficulty
-    },
-  ]);
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      stats,
-    },
-  });
-  // } catch (err) {
-  //   res.status(404).json({
-  //     status: 'fail',
-  //     message: err
-  //   });
-  // }
-});
-
-//startDates in a certain year
-exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
-  // try {
-  const year = req.params.year * 1;
-
-  const plan = await Tour.aggregate([
-    {
-      //deconstructs an array field from the info documents and then output one document for each element of the array.
-      $unwind: '$startDates',
-    },
-    // match is like filter
-    {
-      $match: {
-        startDates: {
-          $gte: new Date(`${year}-01-01`), //same idea: $match: { startDates: { $gte: yea1 , $lte: year2} }
-          $lte: new Date(`${year}-12-31`),
-        },
-      },
-    },
-    {
-      //columns that the match will have
-      $group: {
-        _id: { $month: '$startDates' }, //groups data that have the same month
-        numTourStarts: { $sum: 1 },
-        tours: { $push: '$name' }, //an array (specify 2 or more tours in 1 field)
-      },
-    },
-    // adding a field with _id value to change original name of ID
-    {
-      $addFields: { month: '$_id' }, //field 'month' with value of '$_id'
-    },
-    // hiding the value ID, as we added it with a different name above
-    {
-      $project: {
-        _id: 0, //hiding _id (0 is hiding, 1 is showing)
-      },
-    },
-    {
-      $sort: { numTourStarts: -1 },
-    },
-    {
-      $limit: 12,
-    },
-  ]);
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      plan,
-    },
-  });
-  // } catch (err) {
-  //   res.status(404).json({
-  //     status: fail,
-  //     message: err
-  //   });
-  // }
-});
-
-// /tours-within/233/center/-40,35/unit/mi|km
-// /tours-within?distance=233&center=-40,45&unit=mi //another way
-exports.getToursWithin = catchAsync(async (req, res, next) => {
+// EVENT GEOSPATIAL DATA:
+/**
+ * Shows all events that fit the circle made based on the given lat & lng from the user
+ */
+exports.getEventsWithin = catchAsync(async (req, res, next) => {
   const { distance, latlng, unit } = req.params;
   const [lat, lng] = latlng.split(',');
 
@@ -182,24 +91,22 @@ exports.getToursWithin = catchAsync(async (req, res, next) => {
     next(new AppError('Please provide latitude and longitude in the format lat,lng.', 400));
   }
 
-  // console.log(distance, lat, lng, unit);
-
-  const tours = await Tour.find({
+  const events = await Event.find({
     //geoWithin finds documents between a geometry
     startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
   });
 
   res.status(200).json({
     status: 'success',
-    numbeOfResults: tours.length,
+    numbeOfResults: events.length,
     data: {
-      data: tours,
+      data: events,
     },
   });
 });
 
 /**
- * Sorts tours, displays closest one to coordinate
+ * Sorts events, displays closest one to coordinate
  */
 exports.getDistances = catchAsync(async (req, res, next) => {
   const { latlng, unit } = req.params;
@@ -211,7 +118,7 @@ exports.getDistances = catchAsync(async (req, res, next) => {
     next(new AppError('Please provide latitutr and longitude in the format lat,lng.', 400));
   }
 
-  const distances = await Tour.aggregate([
+  const distances = await Event.aggregate([
     {
       // for geospatial aggregation geoNear must be first stage in aggregation pipeline
       // needs to have golocation index for it to work, by default uses the only geolocation index (so here it's startLocation)
