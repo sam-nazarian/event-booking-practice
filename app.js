@@ -13,6 +13,7 @@ const compression = require('compression');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const eventsRouter = require('./routs/eventRoutes');
 
 // proxies redirect & modify incoming requests
 app.enable('trust proxy'); // trusts heroku which acts as a proxy
@@ -69,9 +70,10 @@ app.use(
 // compression() is a middleware function, compresses text sent to clients
 app.use(compression());
 
+app.use('/api/v1/events', eventsRouter);
+
 /*
 app.use('/', viewRouter); //this middleware only happens in this url, (we call this mounting)
-app.use('/api/v1/tours', eventsRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/bookings', bookingRouter);
