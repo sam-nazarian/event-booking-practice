@@ -1,16 +1,14 @@
 const express = require('express');
-const tourController = require('../controllers/tourController');
+const tourController = require('../controllers/eventController');
 const authController = require('../controllers/authController');
-// const reviewController = require('./../controllers/reviewController');
-const reviewRouter = require('reviewRoutes');
+// const reviewRouter = require('reviewRoutes');
 
 //MOUNTING & ROUTES
 //convention to call this a router
 const router = express.Router(); //creting a new router, which is middleware, save that to variable
 
 //user must be logged in. only 'user' can post reviews.
-// router.route('/:tourId/reviews').post(authController.protect, authController.restrictTo('user'), reviewController.createReview);
-router.use('/:tourId/reviews', reviewRouter); //for this route usse review router, same as app
+// router.use('/:tourId/reviews', reviewRouter); //for this route usse review router, same as app
 
 //AGGREGATION ROUTES
 router.route('/top-5-cheap').get(tourController.alias, tourController.getAllTours); //middleware here

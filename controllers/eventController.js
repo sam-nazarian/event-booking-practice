@@ -1,6 +1,6 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const Tour = require('./../models/tourModel'); //Tour is a Collection/model
+const Tour = require('./../models/eventModel'); //Tour is a Collection/model
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
 const AppError = require('../utils/appError');

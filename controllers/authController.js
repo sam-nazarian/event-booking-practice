@@ -12,7 +12,7 @@ const crypto = require('crypto');
  */
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
+    expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
@@ -30,7 +30,7 @@ const createSendToken = (user, statusCode, req, res) => {
     expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
     httpOnly: true, //cookie can't be accesed or modiefied by browser
     // secure means that cookie can only be sent on a secure (HTTPS) connection
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https' //turn secure on if heroku is using HTTPS
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https', //turn secure on if heroku is using HTTPS
   };
 
   //send token to cookie with these options
@@ -45,8 +45,8 @@ const createSendToken = (user, statusCode, req, res) => {
     status: 'success',
     token,
     data: {
-      user: user
-    }
+      user: user,
+    },
   });
 };
 
@@ -56,7 +56,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm
+    passwordConfirm: req.body.passwordConfirm,
     // passwordChangedAt: req.body.passwordChangedAt
   });
 
@@ -115,7 +115,7 @@ exports.login = catchAsync(async (req, res, next) => {
 exports.logout = (req, res) => {
   res.cookie('jwt', 'loggedout', {
     expires: new Date(Date.now() - 10 * 1000), //10 sec before from now (1000 millisec in 1 sec) this deletes cookie
-    httpOnly: true //cookie can't be accesed or modiefied by browser
+    httpOnly: true, //cookie can't be accesed or modiefied by browser
   });
   res.status(200).json({ status: 'success' });
 };
@@ -239,7 +239,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Token sent to email!'
+      message: 'Token sent to email!',
     });
   } catch (err) {
     user.passwordRestToken = undefined;
@@ -252,10 +252,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on the token
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.token)
-    .digest('hex');
+  const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
 
   // console.log(hashedToken);
 

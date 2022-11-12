@@ -39,11 +39,7 @@ exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
   req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
 
   //image processing
-  await sharp(req.file.buffer)
-    .resize(500, 500)
-    .toFormat('jpeg')
-    .jpeg({ quality: 90 })
-    .toFile(`public/img/users/${req.file.filename}`);
+  await sharp(req.file.buffer).resize(500, 500).toFormat('jpeg').jpeg({ quality: 90 }).toFile(`public/img/users/${req.file.filename}`);
 
   next();
 });
@@ -72,7 +68,7 @@ exports.createUser = (req, res) => {
   res.status(500).json({
     status: 'failed',
     //errors need message, successs needs data
-    message: 'This route is not defined! Please use /signup instead'
+    message: 'This route is not defined! Please use /signup instead',
   });
 };
 
@@ -93,14 +89,14 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   // 3) update user document
   const updateUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true, //returns new object
-    runValidators: true
+    runValidators: true,
   });
 
   res.status(200).json({
     status: 'success',
     data: {
-      user: updateUser
-    }
+      user: updateUser,
+    },
   });
 });
 
@@ -110,7 +106,7 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: 'success',
-    data: null
+    data: null,
   });
 });
 
