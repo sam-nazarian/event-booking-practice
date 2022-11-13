@@ -1,5 +1,5 @@
-const Review = require('./../models/reviewModel'); //Review is a collection
-const catchAsync = require('./../utils/catchAsync');
+const Review = require('../models/reviewModel'); //Review is a collection
+const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
 
 // catchAsync(async (req, res, next) => {
