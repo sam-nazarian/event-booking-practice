@@ -72,7 +72,6 @@ app.use(
 app.use(compression());
 
 app.use('/api/v1/events', eventsRouter);
-app.use('/api/v1/reviews', reviewRouter);
 
 /*
 app.use('/', viewRouter); //this middleware only happens in this url, (we call this mounting)

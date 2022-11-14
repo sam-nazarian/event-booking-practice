@@ -75,81 +75,9 @@ exports.resizeEventImages = catchAsync(async (req, res, next) => {
 });
 
 // EVENT ROUTE HANDLERS / CRUD CONTROLERS:
-exports.getAllEvents = factory.getAll(Event);
 exports.getEvent = factory.getOne(Event, { path: 'reviews' }); //poopulate reviews
 exports.createEvent = factory.createOne(Event);
-exports.updateEvent = factory.updateOne(Event); //patch updates part of data, put replaces data with new data
-exports.deleteEvent = factory.deleteOne(Event);
 
-// EVENT GEOSPATIAL DATA:
-/**
- * Shows all events that fit the circle made based on the given lng & lat from the user
- */
-exports.getEventsWithin = catchAsync(async (req, res, next) => {
-  const { distance, lnglat, unit } = req.params;
-  const [lng, lat] = lnglat.split(',');
-
-  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1; //convert to radians unit
-
-  if (!lat || !lng) {
-    next(new AppError('Please provide latitude and longitude in the format lat,lng.', 400));
-  }
-
-  const events = await Event.find({
-    //geoWithin finds documents between a geometry
-    location: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
-  });
-
-  res.status(200).json({
-    status: 'success',
-    numbeOfResults: events.length,
-    data: {
-      data: events,
-    },
-  });
-});
-
-/**
- * Sorts events, displays closest events to the given coordinate by the user
- */
-exports.getDistances = catchAsync(async (req, res, next) => {
-  const { lnglat, unit } = req.params;
-  const [lng, lat] = lnglat.split(',');
-
-  const multiplier = unit === 'mi' ? 0.000621371 : 0.001; //1 meter in miles is '0.000621371' , 1 meter in km is 0.001
-
-  if (!lat || !lng) {
-    next(new AppError('Please provide latitutr and longitude in the format lat,lng.', 400));
-  }
-
-  const distances = await Event.aggregate([
-    {
-      // for geospatial aggregation geoNear must be first stage in aggregation pipeline
-      // needs to have golocation index for it to work, by default uses the only geolocation index (so here it's location)
-      // distance between location & given coordinate(by user)
-      // results will automatically be sorted by distance in asc
-      $geoNear: {
-        near: {
-          type: 'Point',
-          coordinates: [lng * 1, lat * 1], //convert to num
-        },
-        distanceField: 'distance', //name of field, where calculated distances will be stored
-        distanceMultiplier: multiplier, //multiplies with distance, converts it from meter to km
-      },
-    },
-    {
-      //only showing certain fields, if commented shows all fields
-      $project: {
-        distance: 1,
-        name: 1,
-      },
-    },
-  ]);
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      data: distances,
-    },
-  });
-});
+// exports.getAllEvents = factory.getAll(Event);
+// exports.updateEvent = factory.updateOne(Event); //patch updates part of data, put replaces data with new data
+// exports.deleteEvent = factory.deleteOne(Event);
